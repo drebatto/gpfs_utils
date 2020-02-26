@@ -26,6 +26,15 @@ __nsdlist()
    mmlsfs ${1:-all} -d | awk '/^ -d/ { print $2 }'| tr ';' ' '
 } # __nsdlist()
 
+__poollist()
+{
+   awk -F':' '
+     $2=="60_SG_DISKS" && $3=="'$1'" { disks[$22] += 1}
+     END { for (x in disks) printf("%s ", x); print "" }
+   ' /var/mmfs/gen/mmsdrfs;
+} # __poollist()
+
+
 ###
 ###  mm* commands
 ###
@@ -155,3 +164,23 @@ _mmlsdisk()
 }
 complete -F _mmlsdisk mmlsdisk
 
+#   mmlspool Device {PoolName[,PoolName...] | all} [-L]
+_mmlspool()
+{
+    local cur prev opts base
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if [[ $COMP_CWORD == 1 ]]; then
+        opts="`__fslist`"
+    elif [[ $COMP_CWORD == 2 ]]; then
+        opts="`__poollist ${COMP_WORDS[1]}` all"
+    elif [[ $COMP_CWORD == 3 ]]; then
+        opts="-L"
+    fi
+
+    COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
+    return 0
+}
+complete -F _mmlspool mmlspool
