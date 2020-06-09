@@ -200,6 +200,8 @@ _mmdf()
         opts="`__poollist ${COMP_WORDS[1]}`"
     elif [[ "${prev}" == "--block-size" ]]; then
         opts="auto K M G T"
+    elif [[ "${prev}" == "--qos" ]]; then
+        opts="maintenance other"
     else
         optsarray=( -d -F -m -P -Y --block-size --qos )
         for c in ${COMP_WORDS[@]::${#COMP_WORDS[@]}-1}; do
