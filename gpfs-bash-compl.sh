@@ -184,3 +184,38 @@ _mmlspool()
     return 0
 }
 complete -F _mmlspool mmlspool
+
+#   mmdf Device [-d] [-F] [-m] [-P PoolName] [-Y | --block-size {BlockSize | auto}]
+#        [--qos QosClass]
+_mmdf()
+{
+    local cur prev opts base optsarray
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if [[ $COMP_CWORD == 1 ]]; then
+        opts="`__fslist`"
+    elif [[ "${prev}" == "-P" ]]; then
+        opts="`__poollist ${COMP_WORDS[1]}`"
+    elif [[ "${prev}" == "--block-size" ]]; then
+        opts="auto K M G T"
+    else
+        optsarray=( -d -F -m -P -Y --block-size --qos )
+        for c in ${COMP_WORDS[@]::${#COMP_WORDS[@]}-1}; do
+            case "$c" in
+            -d|-F|-m|-P|--qos)
+                __delopts optsarray "$c"
+                ;;
+            -Y|--block-size)
+                __delopts optsarray "-Y --block-size"
+                ;;
+            esac
+        done
+        opts=${optsarray[@]}
+    fi
+
+    COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
+    return 0
+}
+complete -F _mmdf mmdf
