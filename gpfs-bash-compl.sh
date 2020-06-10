@@ -58,6 +58,12 @@ _mmlsfs()
         opts="${opts} -P -Q -r -R -S -t -T -u -V -z"
         opts="${opts} --create-time --fastea --filesetdf --inode-limit"
         opts="${opts} --perfileset-quota --mount-priority"
+        if [[ ${#COMP_WORDS[@]} -gt 2 ]]; then
+            optsarray=($opts)
+            opts="${COMP_WORDS[@]:1:${#COMP_WORDS[@]}-2}"
+            __delopts optsarray "$opts"
+            opts=${optsarray[@]}
+        fi
     fi
 
     COMPREPLY=($(compgen -W "${opts}" -- ${cur}))  
