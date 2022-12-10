@@ -227,3 +227,26 @@ _mmdf()
     return 0
 }
 complete -F _mmdf mmdf
+
+#   mmlspolicy Device [-L] [-Y]
+_mmlspolicy()
+{
+    local cur prev opts base
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if [[ $COMP_CWORD == 1 ]]; then
+        opts="`__fslist`"
+    else
+        optsarray=( -L -Y )
+        for c in ${COMP_WORDS[@]::${#COMP_WORDS[@]}-1}; do
+            __delopts optsarray $c
+        done
+        opts=${optsarray[@]}
+    fi
+
+    COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
+    return 0
+}
+complete -F _mmlspolicy mmlspolicy
