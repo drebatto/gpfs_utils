@@ -250,3 +250,26 @@ _mmlspolicy()
     return 0
 }
 complete -F _mmlspolicy mmlspolicy
+
+#   mmchlicense {client|fpo|server} [--accept] -N {Node[,Node...] | NodeFile | NodeClass}
+_mmchlicense()
+{
+    local cur prev opts base
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if [[ $COMP_CWORD == 1 ]]; then
+        optsarray=( client fpo server )
+    else
+        optsarray=( --accept -N )
+        for c in ${COMP_WORDS[@]::${#COMP_WORDS[@]}-1}; do
+            __delopts optsarray $c
+        done
+    fi
+    opts=${optsarray[@]}
+
+    COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
+    return 0
+}
+complete -F _mmchlicense mmchlicense
