@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # GPFS commands completion for bash shell
 #
 #  2015-05-05 dr <david.rebatto@mi.infn.it>
@@ -23,13 +24,13 @@ __fslist()
 
 __nsdlist()
 {
-   mmlsfs ${1:-all} -d | awk '/^ -d/ { print $2 }'| tr ';' ' '
+   mmlsfs "${1:-all}" -d | awk '/^ -d/ { print $2 }'| tr ';' ' '
 } # __nsdlist()
 
 __poollist()
 {
    awk -F':' '
-     $2=="60_SG_DISKS" && $3=="'$1'" { disks[$22] += 1}
+     $2=="60_SG_DISKS" && $3=="'"$1"'" { disks[$22] += 1}
      END { for (x in disks) printf("%s ", x); print "" }
    ' /var/mmfs/gen/mmsdrfs;
 } # __poollist()
@@ -46,13 +47,13 @@ __poollist()
 #          [--perfileset-quota] [--mount-priority]
 _mmlsfs() 
 {
-    local cur prev opts base
+    local cur prev opts
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     if [[ $COMP_CWORD == 1 ]]; then
-        opts="all all_local all_remote `__fslist`"
+        opts="all all_local all_remote $(__fslist)"
     elif [[ ${cur} == -* ]] ; then
         opts="-A -B -d -D -E -f -i -I -j -k -K -L -m -M -n -o"
         opts="${opts} -P -Q -r -R -S -t -T -u -V -z"
@@ -60,13 +61,13 @@ _mmlsfs()
         opts="${opts} --perfileset-quota --mount-priority"
         if [[ ${#COMP_WORDS[@]} -gt 2 ]]; then
             optsarray=($opts)
-            opts="${COMP_WORDS[@]:1:${#COMP_WORDS[@]}-2}"
+            opts="${COMP_WORDS[*]:1:${#COMP_WORDS[@]}-2}"
             __delopts optsarray "$opts"
-            opts=${optsarray[@]}
+            opts=${optsarray[*]}
         fi
     fi
 
-    COMPREPLY=($(compgen -W "${opts}" -- ${cur}))  
+    COMPREPLY=($(compgen -W "${opts}" -- "${cur}"))  
     return 0
 }
 complete -F _mmlsfs mmlsfs
@@ -85,12 +86,12 @@ _mmdiag()
 
     if [[ ${#COMP_WORDS[@]} -gt 2 ]]; then
         optsarray=($opts)
-        opts="${COMP_WORDS[@]:1:${#COMP_WORDS[@]}-2}"
+        opts="${COMP_WORDS[*]:1:${#COMP_WORDS[@]}-2}"
         __delopts optsarray "$opts"
-        opts=${optsarray[@]}
+        opts=${optsarray[*]}
     fi
 
-    COMPREPLY=( $(compgen -W "$opts" -- ${cur}) )
+    COMPREPLY=( $(compgen -W "$opts" -- "${cur}") )
     return 0
 }
 complete -F _mmdiag mmdiag
@@ -106,12 +107,12 @@ _mmlsnsd()
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     if [[ "${prev}" == "-f" ]]; then
-        opts=`__fslist`
+        opts=$(__fslist)
     elif [[ "${prev}" == "-d" ]]; then
-        opts=`__nsdlist all_local`
+        opts=$(__nsdlist all_local)
     else
         optsarray=( -a -F -f -d -L -m -M -X -v )
-        for c in ${COMP_WORDS[@]::${#COMP_WORDS[@]}-1}; do
+        for c in ${COMP_WORDS[*]::${#COMP_WORDS[@]}-1}; do
             case "$c" in
             -a|-F|-f|-d)
                 __delopts optsarray "-a -F -f -d"
@@ -124,10 +125,10 @@ _mmlsnsd()
                 ;;
             esac
         done
-        opts=${optsarray[@]}
+        opts=${optsarray[*]}
     fi
 
-    COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
+    COMPREPLY=($(compgen -W "${opts}" -- "${cur}"))
     return 0
 }
 complete -F _mmlsnsd mmlsnsd
@@ -138,18 +139,18 @@ complete -F _mmlsnsd mmlsnsd
 #   mmlsdisk Device [-d "DiskName[;DiskName...]"] {-m | -M}
 _mmlsdisk()
 {
-    local cur prev opts base
+    local cur prev opts
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     if [[ $COMP_CWORD == 1 ]]; then
-        opts="`__fslist`"
+        opts="$(__fslist)"
     elif [[ "${prev}" == "-d" ]]; then
-        opts=`__nsdlist ${COMP_WORDS[1]}`
+        opts=$(__nsdlist "${COMP_WORDS[1]}")
     else
         optsarray=( -d -e -L -m -M )
-        for c in ${COMP_WORDS[@]::${#COMP_WORDS[@]}-1}; do
+        for c in "${COMP_WORDS[@]::${#COMP_WORDS[@]}-1}"; do
             case "$c" in
             -e)
                 __delopts optsarray "-m -M -e"
@@ -162,10 +163,10 @@ _mmlsdisk()
                 ;;
             esac
         done
-        opts=${optsarray[@]}
+        opts=${optsarray[*]}
     fi
 
-    COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
+    COMPREPLY=($(compgen -W "${opts}" -- "${cur}"))
     return 0
 }
 complete -F _mmlsdisk mmlsdisk
@@ -173,20 +174,20 @@ complete -F _mmlsdisk mmlsdisk
 #   mmlspool Device {PoolName[,PoolName...] | all} [-L]
 _mmlspool()
 {
-    local cur prev opts base
+    local cur prev opts
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     if [[ $COMP_CWORD == 1 ]]; then
-        opts="`__fslist`"
+        opts="$(__fslist)"
     elif [[ $COMP_CWORD == 2 ]]; then
-        opts="`__poollist ${COMP_WORDS[1]}` all"
+        opts="$(__poollist "${COMP_WORDS[1]}") all"
     elif [[ $COMP_CWORD == 3 ]]; then
         opts="-L"
     fi
 
-    COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
+    COMPREPLY=($(compgen -W "${opts}" -- "${cur}"))
     return 0
 }
 complete -F _mmlspool mmlspool
@@ -195,22 +196,22 @@ complete -F _mmlspool mmlspool
 #        [--qos QosClass]
 _mmdf()
 {
-    local cur prev opts base optsarray
+    local cur prev opts optsarray
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     if [[ $COMP_CWORD == 1 ]]; then
-        opts="`__fslist`"
+        opts="$(__fslist)"
     elif [[ "${prev}" == "-P" ]]; then
-        opts="`__poollist ${COMP_WORDS[1]}`"
+        opts="$(__poollist "${COMP_WORDS[1]}")"
     elif [[ "${prev}" == "--block-size" ]]; then
         opts="auto K M G T"
     elif [[ "${prev}" == "--qos" ]]; then
         opts="maintenance other"
     else
         optsarray=( -d -F -m -P -Y --block-size --qos )
-        for c in ${COMP_WORDS[@]::${#COMP_WORDS[@]}-1}; do
+        for c in "${COMP_WORDS[@]::${#COMP_WORDS[@]}-1}"; do
             case "$c" in
             -d|-F|-m|-P|--qos)
                 __delopts optsarray "$c"
@@ -220,56 +221,10 @@ _mmdf()
                 ;;
             esac
         done
-        opts=${optsarray[@]}
+        opts=${optsarray[*]}
     fi
 
-    COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
+    COMPREPLY=($(compgen -W "${opts}" -- "${cur}"))
     return 0
 }
 complete -F _mmdf mmdf
-
-#   mmlspolicy Device [-L] [-Y]
-_mmlspolicy()
-{
-    local cur prev opts base
-    COMPREPLY=()
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    prev="${COMP_WORDS[COMP_CWORD-1]}"
-
-    if [[ $COMP_CWORD == 1 ]]; then
-        opts="`__fslist`"
-    else
-        optsarray=( -L -Y )
-        for c in ${COMP_WORDS[@]::${#COMP_WORDS[@]}-1}; do
-            __delopts optsarray $c
-        done
-        opts=${optsarray[@]}
-    fi
-
-    COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
-    return 0
-}
-complete -F _mmlspolicy mmlspolicy
-
-#   mmchlicense {client|fpo|server} [--accept] -N {Node[,Node...] | NodeFile | NodeClass}
-_mmchlicense()
-{
-    local cur prev opts base
-    COMPREPLY=()
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    prev="${COMP_WORDS[COMP_CWORD-1]}"
-
-    if [[ $COMP_CWORD == 1 ]]; then
-        optsarray=( client fpo server )
-    else
-        optsarray=( --accept -N )
-        for c in ${COMP_WORDS[@]::${#COMP_WORDS[@]}-1}; do
-            __delopts optsarray $c
-        done
-    fi
-    opts=${optsarray[@]}
-
-    COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
-    return 0
-}
-complete -F _mmchlicense mmchlicense
