@@ -35,6 +35,11 @@ __poollist()
    ' /var/mmfs/gen/mmsdrfs;
 } # __poollist()
 
+__build_COMPREPLY()
+{
+    mapfile -t COMPREPLY < <(compgen -W "${opts}" -- "${cur}")
+    echo "DEBUG: ${COMPREPLY[*]}" >&2
+}
 
 ###
 ###  mm* commands
@@ -60,14 +65,15 @@ _mmlsfs()
         opts="${opts} --create-time --fastea --filesetdf --inode-limit"
         opts="${opts} --perfileset-quota --mount-priority"
         if [[ ${#COMP_WORDS[@]} -gt 2 ]]; then
-            optsarray=($opts)
+            IFS=" " read -r -a optsarray <<< "$opts"
             opts="${COMP_WORDS[*]:1:${#COMP_WORDS[@]}-2}"
             __delopts optsarray "$opts"
             opts=${optsarray[*]}
         fi
     fi
 
-    COMPREPLY=($(compgen -W "${opts}" -- "${cur}"))  
+    #COMPREPLY=($(compgen -W "${opts}" -- "${cur}"))  
+    IFS=" " read -r -a COMPREPLY <<< "$(compgen -W "${opts}" -- "${cur}")"
     return 0
 }
 complete -F _mmlsfs mmlsfs
@@ -85,13 +91,15 @@ _mmdiag()
     opts="${opts} --trace --assert --iohist --tokenmgr --commands --stats"
 
     if [[ ${#COMP_WORDS[@]} -gt 2 ]]; then
-        optsarray=($opts)
+        #optsarray=($opts)
+        IFS=" " read -r -a optsarray <<< "$opts"
         opts="${COMP_WORDS[*]:1:${#COMP_WORDS[@]}-2}"
         __delopts optsarray "$opts"
         opts=${optsarray[*]}
     fi
 
-    COMPREPLY=( $(compgen -W "$opts" -- "${cur}") )
+    #COMPREPLY=( $(compgen -W "$opts" -- "${cur}") )
+    IFS=" " read -r -a COMPREPLY <<< "$(compgen -W "${opts}" -- "${cur}")"
     return 0
 }
 complete -F _mmdiag mmdiag
@@ -128,7 +136,7 @@ _mmlsnsd()
         opts=${optsarray[*]}
     fi
 
-    COMPREPLY=($(compgen -W "${opts}" -- "${cur}"))
+    __build_COMPREPLY
     return 0
 }
 complete -F _mmlsnsd mmlsnsd
@@ -166,7 +174,7 @@ _mmlsdisk()
         opts=${optsarray[*]}
     fi
 
-    COMPREPLY=($(compgen -W "${opts}" -- "${cur}"))
+    __build_COMPREPLY
     return 0
 }
 complete -F _mmlsdisk mmlsdisk
@@ -187,7 +195,7 @@ _mmlspool()
         opts="-L"
     fi
 
-    COMPREPLY=($(compgen -W "${opts}" -- "${cur}"))
+    __build_COMPREPLY
     return 0
 }
 complete -F _mmlspool mmlspool
@@ -224,7 +232,53 @@ _mmdf()
         opts=${optsarray[*]}
     fi
 
-    COMPREPLY=($(compgen -W "${opts}" -- "${cur}"))
+    __build_COMPREPLY
     return 0
 }
 complete -F _mmdf mmdf
+
+#   mmlspolicy Device [-L] [-Y]
+_mmlspolicy()
+{
+    local cur prev opts base
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if [[ $COMP_CWORD == 1 ]]; then
+        opts="$(__fslist)"
+    else
+        optsarray=( -L -Y )
+        for c in ${COMP_WORDS[*]::${#COMP_WORDS[@]}-1}; do
+            __delopts optsarray "$c"
+        done
+        opts=${optsarray[*]}
+    fi
+
+    __build_COMPREPLY
+    return 0
+}
+complete -F _mmlspolicy mmlspolicy
+
+#   mmchlicense {client|fpo|server} [--accept] -N {Node[,Node...] | NodeFile | NodeClass}
+_mmchlicense()
+{
+    local cur prev opts base
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if [[ $COMP_CWORD == 1 ]]; then
+        optsarray=( client fpo server )
+    else
+        optsarray=( --accept -N )
+        for c in ${COMP_WORDS[*]::${#COMP_WORDS[@]}-1}; do
+            __delopts optsarray "$c"
+        done
+    fi
+    opts=${optsarray[*]}
+
+    __build_COMPREPLY
+    return 0
+}
+complete -F _mmchlicense mmchlicense
