@@ -38,7 +38,6 @@ __poollist()
 __build_COMPREPLY()
 {
     mapfile -t COMPREPLY < <(compgen -W "${opts}" -- "${cur}")
-    echo "DEBUG: ${COMPREPLY[*]}" >&2
 }
 
 ###
